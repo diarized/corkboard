@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-import os
-from random import sample
-from string import digits, ascii_letters
-
 import cherrypy
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -13,10 +9,7 @@ from helpers import tags_to_path
 from linkstorage import Db
 db = Db()
 
-NAMESPACE_WIDTH = 6 # number of combinations = (36+10)^6 = 9.5 billion 
-
-def short_id():
-    return ''.join(sample(digits + ascii_letters, NAMESPACE_WIDTH))
+from crawler import recursive_urls
 
 class Root(object):
     def __init__(self):
@@ -29,6 +22,7 @@ class Root(object):
         if not args:
             return tmpl.render(title="TITLE", body="<p>BODY</p>")
         else:
+            # args is a tuple
             return tmpl.render(title="TITLE", body=db.retrieve('/'.join(args)))
 
 
@@ -61,7 +55,7 @@ class Root(object):
 cherrypy.config.update({'server.socket_host': '0.0.0.0',
                         'server.socket_port': 8888
                         })
-
+recursive_urls(["http://www.onet.pl/"], db)
 root = Root()
 cherrypy.quickstart(root)
 

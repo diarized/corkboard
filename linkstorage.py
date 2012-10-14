@@ -1,3 +1,5 @@
+import pprint
+
 class Db(object):
     def __init__(self):
         self.storage = {}
@@ -23,3 +25,7 @@ class Db(object):
             return self.storage[path]
         except KeyError:
             return 'Nothing here.'
+
+    def dump(self):
+        pprint.pprint(self.storage)
+            
