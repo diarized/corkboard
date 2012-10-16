@@ -6,8 +6,9 @@ from mako.lookup import TemplateLookup
 lookup = TemplateLookup(directories=['templates'])
 
 from helpers import tags_to_path
-from linkstorage import Db
-db = Db()
+from linkstorage import Db, FileSystem, Dir, Link
+#db = Db()
+root = FileSystem()
 
 from crawler import recursive_urls
 
@@ -55,7 +56,7 @@ class Root(object):
 cherrypy.config.update({'server.socket_host': '0.0.0.0',
                         'server.socket_port': 8888
                         })
-recursive_urls(["http://www.onet.pl/"], db)
+recursive_urls(["http://stackoverflow.com/questions/tagged/python"], db)
 root = Root()
 cherrypy.quickstart(root)
 
