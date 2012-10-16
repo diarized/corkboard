@@ -21,7 +21,7 @@ class Root(object):
         self.log.error("default() invoked.")
         tmpl = lookup.get_template("index.html")
         if not args:
-            return tmpl.render(title="TITLE", body="<p>BODY</p>")
+            return tmpl.render(title="TITLE", body=fs.root.files)
         else:
             # args is a tuple
             path = '/'.join(args)
