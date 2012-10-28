@@ -1,5 +1,7 @@
 import pprint
 
+DEBUG=False
+
 class Db(object):
     def __init__(self):
         self.storage = {}
@@ -31,65 +33,90 @@ class Db(object):
 
 
 class Link(object):
-    def __init__(self, link, title='', tags=[]):
+    def __init__(self, link, title=''):
         self.name = link
         self.title = title
-        self.tags = tags
 
 
 class Dir(object):
     def __init__(self, name, parent):
-        self.name = name
+        if DEBUG:
+            print('Dir.__init__(): initialization of directory ' + name)
+        if parent:
+            parent_path = parent.path()
+            self.name = parent_path + name
+            if DEBUG:
+                print('Dir.__init__(): there is a parent = ' + parent_path)
+        else:
+            self.name = name
+            if DEBUG:
+                print('Dir.__init__(): there is no parent. I am root. Name for root is ' + name)
         self.parent = parent
         self.files = {}
 
-    def add(self, file):
-        self.files[file.name] = file
+    def add(self, link):
+        self.files[link.name] = link
 
     def get(self, file_name):
+        if DEBUG:
+            print('Dir.get(): getting {0} by {1}'.format(file_name, self.name))
         try:
-            dir = self.files[file_name]
+            dir_name = self.files[file_name]
         except KeyError:
-            dir = Dir(file_name, self)
-            self.files[file_name] = dir
-        return dir
+            if DEBUG:
+                print('Dir.get(): there is no {0}. Creating.'.format(file_name))
+            dir_name = Dir(file_name, self)
+            self.files[file_name] = dir_name
+        return dir_name
 
     def ls(self):
-        pprint.pprint(self.files)
+        return self.files
 
     def lsR(self):
         print('DIR {0} ================================='.format(self.path()))
-        for file in self.files.keys():
+        for link in self.files.keys():
             try:
-                self.files[file].lsR()
+                self.files[link].lsR()
             except AttributeError:
-                print file
+                print link
 
     def path(self):
-        print('entering path()')
-        cwd = self
-        print('my name is {0}'.format(self.name))
-        full_path = self.name
-        while cwd.parent:
-            print('checking path of {0}'.format(cwd.parent.name))
-            full_path = cwd.parent.name + '/' + full_path
-            cwd = cwd.parent
-        return '/' + full_path.lstrip('/')
+        if DEBUG:
+            print('Dir.path(): dir name is {0}'.format(self.name))
+        return self.name
+
 
 class FileSystem(object):
     def __init__(self):
         self.root = Dir('/', None)
+        self.length = 0
 
     def get(self, path):
+        path = path.replace(' ', '/') # validation here
+        path = path.lstrip('/')
         path_list = path.split('/')
+        if DEBUG:
+            print path_list
         cwd = self.root
-        for dir in path_list:
-            cwd = cwd.get(dir)
+        for subdir in path_list:
+            if cwd.name == '/':
+                path_to_subdir = subdir
+            else:
+                path_to_subdir = cwd.name + '/' + subdir
+            if DEBUG:
+                print('FileSystem.get(): getting the next subdir: ' + path_to_subdir)
+            tmp = cwd.get(path_to_subdir)
+            cwd = tmp
         return cwd
 
-    def add(self, path, file):
+    def add(self, path, link):
         cwd = self.get(path)
-        cwd.add(file)
+        if DEBUG:
+            print('FileSystem.add(): fs.add({0})'.format(path))
+            print('FileSystem.add(): got Dir "{0}"'.format(cwd.name))
+            print('FileSystem.add(): "{0}".add("{1}")'.format(cwd.name, link.name))
+        cwd.add(link)
+        self.length += 1
         return cwd
 
     def walk(self):

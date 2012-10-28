@@ -1,23 +1,26 @@
 #!/usr/bin/env python
 
 import cherrypy
-from mako.template import Template
 from mako.lookup import TemplateLookup
 lookup = TemplateLookup(directories=['templates'])
 
 from helpers import tags_to_path
-from linkstorage import Db, FileSystem, Dir, Link
-#db = Db()
+from linkstorage import FileSystem, Link
 fs = FileSystem()
 
 from crawler import recursive_urls
 
 class Root(object):
+    """ Root CherryPy application object """
     def __init__(self):
         self.log = cherrypy.log
 
     @cherrypy.expose
     def default(self, *args):
+        """
+        processing of all GET requests
+        (if not handled by functions exposed below)
+        """
         self.log.error("default() invoked.")
         tmpl = lookup.get_template("index.html")
         if not args:
@@ -25,34 +28,32 @@ class Root(object):
         else:
             # args is a tuple
             path = '/'.join(args)
-            dir = fs.get(path)
-            return tmpl.render(title="TITLE", body=dir.files)
-
+            dir_at_path = fs.get(path)
+            return tmpl.render(title="TITLE", body=dir_at_path.files)
 
     @cherrypy.expose
-    def post(self, link='', title='', tags_string=''):
+    def post(self, url='', title='', path=''):
         """
         http://hostname/post, NOT http://hostname/post.html
         """
-        if link:
-            if tags_string:
-                path = tags_to_path(tags_string)
-            else:
-                path = ''
-            self.log.error(">>>" + link + "<<<")
-            db.store(link, title, path)
-            self.log.error("Link {0} stored in {1}".format(link, path))
-            raise cherrypy.InternalRedirect("/{0}".format(path))
-            tmpl = lookup.get_template("index.html")
-            links_set = db.retrieve(path)
-            p_links = ''
-            for link in links_set:
-                p_links = p_links + '<p>' + link + '</p>\n'
-            return tmpl.render(title="TITLE", body=all_links)
-        else:
+        if not url:
             self.log.error("No link")
             tmpl = lookup.get_template("post.html")
             return tmpl.render(title="TITLE")
+
+        if not path:
+            path = '/uncategorized' 
+        if not path.startswith('/'):
+            path = '/' + path
+
+        self.log.error(">>>" + url + "<<<")
+        link = Link(url, title)
+        fs.add(path, link)
+        self.log.error("Link {0} stored in {1}".format(link, path))
+        raise cherrypy.InternalRedirect("/{0}".format(path))
+#        dir_at_path = fs.get(path)
+#        tmpl = lookup.get_template("index.html")
+#        return tmpl.render(title="TITLE", body=dir_at_path.files)
 
 
 cherrypy.config.update({'server.socket_host': '0.0.0.0',
