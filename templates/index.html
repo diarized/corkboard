@@ -2,8 +2,9 @@
   <head><title>${title}</title></head>
   <body>
     <ul>
-    % for el in body:
-        <li><a href="${el}">${el}</a></li>
+      <li><a href="${parent}">..</a></li>
+    % for file in files:
+        <li><a href="${file}">${file}</a></li>
     % endfor
     </ul>
     <p>To post go to <a href="/post/">POST</a></p>

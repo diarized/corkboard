@@ -4,8 +4,7 @@ import cherrypy
 from mako.lookup import TemplateLookup
 lookup = TemplateLookup(directories=['templates'])
 
-from helpers import tags_to_path
-from linkstorage import FileSystem, Link
+from linkstorage import FileSystem, Link, DEBUG
 fs = FileSystem()
 
 from crawler import recursive_urls
@@ -21,15 +20,19 @@ class Root(object):
         processing of all GET requests
         (if not handled by functions exposed below)
         """
-        self.log.error("default() invoked.")
+        if DEBUG:
+            self.log.error("default() invoked.")
         tmpl = lookup.get_template("index.html")
         if not args:
-            return tmpl.render(title="TITLE", body=fs.root.files)
+            return tmpl.render(title=fs.root.name, parent=fs.root.name, files=fs.root.files)
         else:
             # args is a tuple
             path = '/'.join(args)
             dir_at_path = fs.get(path)
-            return tmpl.render(title="TITLE", body=dir_at_path.files)
+            return tmpl.render(
+                    title=dir_at_path.name,
+                    parent=dir_at_path.parent.name,
+                    files=dir_at_path.files)
 
     @cherrypy.expose
     def post(self, url='', title='', path=''):
@@ -45,21 +48,19 @@ class Root(object):
             path = '/uncategorized' 
         if not path.startswith('/'):
             path = '/' + path
-
-        self.log.error(">>>" + url + "<<<")
+        if DEBUG:
+            self.log.error(">>>" + url + "<<<")
         link = Link(url, title)
         fs.add(path, link)
-        self.log.error("Link {0} stored in {1}".format(link, path))
+        if DEBUG:
+            self.log.error("Link {0} stored in {1}".format(link, path))
         raise cherrypy.InternalRedirect("/{0}".format(path))
-#        dir_at_path = fs.get(path)
-#        tmpl = lookup.get_template("index.html")
-#        return tmpl.render(title="TITLE", body=dir_at_path.files)
-
 
 cherrypy.config.update({'server.socket_host': '0.0.0.0',
                         'server.socket_port': 8888
                         })
-recursive_urls(["http://stackoverflow.com/questions/tagged/python"], fs)
+#recursive_urls(["http://stackoverflow.com/questions/tagged/python"], fs)
+recursive_urls(["http://www.onet.pl/"], fs)
 root = Root()
 cherrypy.quickstart(root)
 
