@@ -13,7 +13,7 @@ class Path(object):
         return str(self.path)
 
     def validate(self, path):
-        del_characters = ''.join(c for c in map(chr, range(256)) if (not c.isalnum() and not c == ' '))
+        del_characters = ''.join(c for c in map(chr, range(256)) if (not c.isalnum() and not c in ' /'))
         del_characters_class = '[' + del_characters + ']'
         pattern = re.compile(del_characters_class)
         path = re.sub(pattern, "", path, 0, 0)
