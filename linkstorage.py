@@ -1,4 +1,27 @@
-DEBUG=False
+DEBUG=True
+
+import re
+
+class Path(object):
+    def __init__(self, path):
+        if path:
+            self.path = self.validate(path)
+        else:
+            self.path = '/uncategorized'
+
+    def __str__(self):
+        return str(self.path)
+
+    def validate(self, path):
+        del_characters = ''.join(c for c in map(chr, range(256)) if (not c.isalnum() and not c == ' '))
+        del_characters_class = '[' + del_characters + ']'
+        pattern = re.compile(del_characters_class)
+        path = re.sub(pattern, "", path, 0, 0)
+        path = ' '.join(path.split())
+        path = path.replace(' ', '/')
+        if not path.startswith('/'):
+            path = '/' + path
+        return path
 
 
 class Link(object):

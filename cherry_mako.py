@@ -4,7 +4,7 @@ import cherrypy
 from mako.lookup import TemplateLookup
 lookup = TemplateLookup(directories=['templates'])
 
-from linkstorage import FileSystem, Link, DEBUG
+from linkstorage import FileSystem, Link, Path, DEBUG
 fs = FileSystem()
 
 from crawler import recursive_urls
@@ -35,7 +35,7 @@ class Root(object):
                     files=dir_at_path.files)
 
     @cherrypy.expose
-    def post(self, url='', title='', path=''):
+    def post(self, url='', title='', tags=''):
         """
         http://hostname/post, NOT http://hostname/post.html
         """
@@ -43,13 +43,10 @@ class Root(object):
             self.log.error("No link")
             tmpl = lookup.get_template("post.html")
             return tmpl.render(title="TITLE")
-
-        if not path:
-            path = '/uncategorized' 
-        if not path.startswith('/'):
-            path = '/' + path
+        path = Path(tags).path
         if DEBUG:
-            self.log.error(">>>" + url + "<<<")
+            self.log.error(">>> URL " + url + "<<<")
+            self.log.error(">>> PATH " + path + "<<<")
         link = Link(url, title)
         fs.add(path, link)
         if DEBUG:
@@ -60,7 +57,7 @@ cherrypy.config.update({'server.socket_host': '0.0.0.0',
                         'server.socket_port': 8888
                         })
 #recursive_urls(["http://stackoverflow.com/questions/tagged/python"], fs)
-recursive_urls(["http://www.onet.pl/"], fs)
+recursive_urls(["http://www.bankier.pl/"], fs)
 root = Root()
 cherrypy.quickstart(root)
 
